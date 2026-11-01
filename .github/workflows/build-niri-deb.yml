@@ -42,6 +42,17 @@ jobs:
         run: cargo install cargo-deb
         # cargo-deb 是社区推荐的打包工具，能自动生成 .deb 结构[reference:4][reference:5]
 
+      - name: Install cargo-deb
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cargo install cargo-deb
+
+      - name: Build .deb package
+        working-directory: ./niri
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cargo deb --no-build
+
       - name: Build .deb package
         working-directory: ./niri
         run: |
