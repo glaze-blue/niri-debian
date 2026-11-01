@@ -1,63 +1,50 @@
 name: Build Niri 26.04 .deb on Debian Stable
 
 on:
-  workflow_dispatch: # 允许在 GitHub 页面手动触发
+  workflow_dispatch:
   push:
-    branches: [ main ] # 可根据你的 Fork 仓库主分支名称调整
+    branches: [ main ]
 
 jobs:
   build-deb:
     runs-on: ubuntu-latest
     container:
-      image: debian:trixie # 在 Debian Stable (Trixie) 容器中构建，确保环境兼容性
-      options: --user root # 以 root 运行，方便安装系统包
+      image: debian:trixie
+      options: --user root
 
     steps:
       - name: Checkout Niri source
         uses: actions/checkout@v4
         with:
-          repository: niri-wm/niri # 如果你 Fork 后修改了代码，请替换为你的用户名/niri
-          ref: v26.04 # 指定要编译的 Niri 版本
+          repository: niri-wm/niri
+          ref: v26.04
           path: niri
 
       - name: Install build dependencies
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
+            ca-certificates \
             gcc clang libudev-dev libgbm-dev libxkbcommon-dev \
             libegl1-mesa-dev libwayland-dev libinput-dev libdbus-1-dev \
             libsystemd-dev libseat-dev libpipewire-0.3-dev \
             libpango1.0-dev libdisplay-info-dev \
             git curl dpkg-dev
-          # 依赖列表参考：社区在 Debian Trixie 上成功构建 Niri 的经验[reference:1]
 
-      - name: Install Rust toolchain
-        run: |
-          # Niri 26.04 的最低 Rust 版本要求为 1.85[reference:3]
-          # 使用 rustup 安装最新稳定版 Rust，确保版本达标
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Install cargo-deb
-        run: cargo install cargo-deb
-        # cargo-deb 是社区推荐的打包工具，能自动生成 .deb 结构[reference:4][reference:5]
-
-      - name: Install cargo-deb
+      - name: Install Rust toolchain and cargo-deb
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          . "$HOME/.cargo/env"
+          rustc --version
+          cargo --version
           cargo install cargo-deb
 
       - name: Build .deb package
         working-directory: ./niri
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
-          cargo deb --no-build
-
-      - name: Build .deb package
-        working-directory: ./niri
-        run: |
-          # 使用 cargo-deb 直接构建，它会自动处理大部分打包逻辑
-          # 注意：不要使用 --all-features，该选项会启用仅用于开发的特性，可能导致内存问题[reference:6]
+          . "$HOME/.cargo/env"
           cargo deb --no-build
 
       - name: Upload .deb artifact
