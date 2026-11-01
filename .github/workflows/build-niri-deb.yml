@@ -45,7 +45,7 @@ jobs:
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
           . "$HOME/.cargo/env"
-          cargo deb --no-build
+          cargo deb
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
