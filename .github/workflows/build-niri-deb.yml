@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build-deb:
     runs-on: ubuntu-latest
@@ -46,10 +49,24 @@ jobs:
           export PATH="$HOME/.cargo/bin:$PATH"
           . "$HOME/.cargo/env"
           cargo deb
+          ls -lh target/debian/*.deb
 
-      - name: Upload .deb artifact
+      - name: Upload artifact (Actions 页面)
         uses: actions/upload-artifact@v4
         with:
           name: niri-deb
           path: niri/target/debian/*.deb
           retention-days: 7
+
+      - name: Publish / update latest Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest Build (v26.04)"
+          body: |
+            自动构建，来源 commit: ${{ github.sha }}
+            构建时间: ${{ github.event.head_commit.timestamp }}
+          files: niri/target/debian/*.deb
+          draft: false
+          prerelease: false
+          make_latest: true
